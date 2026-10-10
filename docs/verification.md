@@ -13,7 +13,7 @@ git diff --check
 - 原有 37 个测试作为迁移基线；辅助模块测试仅更新 import 路径。
 - 新增布局测试：两份 marketplace 都解析到同一插件根目录；Claude agent 路径有效；七个入口在两个宿主中的显式/隐式调用策略一致；skill 和 harness 的本地 Markdown 引用都在插件内。
 - 迁移冒烟测试：把运行时复制到带空格的临时安装目录，在另一个带空格的临时 Git 项目运行 review；用模拟 Kimi 验证参数、prompt/schema 替换、job 所在目录及 result 读取。没有调用真实模型。
-- 版本测试：四处版本更新一致，Codex marketplace 不另存版本。
+- 版本测试：两份插件清单版本更新一致，升级版本不会改写 marketplace；两份 marketplace 不另存版本。
 
 ## 运行时不变性
 

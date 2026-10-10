@@ -22,8 +22,9 @@ function makeRoot() {
     JSON.stringify(
       {
         name: 'kimi-code-plugin',
-        metadata: { version: '0.1.0' },
-        plugins: [{ name: 'kimi-code', version: '0.1.0', source: './' }],
+        owner: { name: 'Nousyn' },
+        metadata: { description: 'Test marketplace' },
+        plugins: [{ name: 'kimi-code', source: './' }],
       },
       null,
       2,
@@ -32,14 +33,17 @@ function makeRoot() {
   return root;
 }
 
-test('bumpVersion sets all four fields across both plugin manifests and the marketplace', () => {
+test('bumpVersion updates both plugin manifests without changing the marketplace', () => {
   const root = makeRoot();
   try {
+    const marketplace = path.join(root, '.claude-plugin/marketplace.json');
+    const before = fs.readFileSync(marketplace, 'utf8');
     const changed = bumpVersion(root, '1.2.3');
-    assert.equal(changed.length, 3);
+    assert.deepEqual(changed, ['plugin.json', '.claude-plugin/plugin.json']);
     assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'plugin.json'), 'utf8')).version, '1.2.3');
     assert.equal(JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin/plugin.json'), 'utf8')).version, '1.2.3');
     assert.deepEqual(checkVersions(root, '1.2.3'), []);
+    assert.equal(fs.readFileSync(marketplace, 'utf8'), before);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }
@@ -48,13 +52,13 @@ test('bumpVersion sets all four fields across both plugin manifests and the mark
 test('checkVersions reports the drifting field', () => {
   const root = makeRoot();
   try {
-    const file = path.join(root, '.claude-plugin/marketplace.json');
+    const file = path.join(root, '.claude-plugin/plugin.json');
     const json = JSON.parse(fs.readFileSync(file, 'utf8'));
-    json.plugins[0].version = '0.2.0';
+    json.version = '0.2.0';
     fs.writeFileSync(file, JSON.stringify(json));
     const mismatches = checkVersions(root, '0.1.0');
     assert.equal(mismatches.length, 1);
-    assert.match(mismatches[0], /plugins\[kimi-code\]\.version: expected 0\.1\.0, found 0\.2\.0/);
+    assert.match(mismatches[0], /\.claude-plugin\/plugin\.json version: expected 0\.1\.0, found 0\.2\.0/);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });
   }

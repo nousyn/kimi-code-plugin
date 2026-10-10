@@ -4,18 +4,12 @@
     "name": "Nousyn"
   },
   "metadata": {
-    "description": "在 Claude Code 中调用本机 Kimi Code CLI 进行代码审查与任务委托。",
-    "version": "0.1.0"
+    "description": "在 Claude Code 中调用本机 Kimi Code CLI 进行代码审查与任务委托。"
   },
   "plugins": [
     {
       "name": "kimi-code",
-      "description": "在 Claude Code 中调用本机 Kimi Code CLI 进行代码审查与任务委托。",
-      "version": "0.1.0",
-      "source": "./",
-      "author": {
-        "name": "Nousyn"
-      }
+      "source": "./"
     }
   ]
 }

@@ -137,11 +137,11 @@ npm test
 
 运行参数解析、job 存储、stream-json 结果提取、双端插件布局和资源路径测试（node:test，零依赖）。布局测试使用临时目录和模拟 Kimi，不调用真实模型。
 
-发布新版本时同步四处版本号：根 `plugin.json`、`.claude-plugin/plugin.json`、Claude marketplace 的 `metadata.version` 和 `plugins[kimi-code].version`。根 `plugin.json` 是检查基准；Codex marketplace 从它读取版本，不重复声明：
+发布新版本时只同步两份插件清单的版本号：根 `plugin.json` 和 `.claude-plugin/plugin.json`。根 `plugin.json` 是检查基准；两份 marketplace 从各自的插件清单读取版本，不重复声明。Claude marketplace 的本地插件条目也从清单读取描述和作者，仅保留 `name`、`source`；市场自身保留维护者和描述，不单独维护版本。
 
 ```
-node scripts/bump-version.mjs 0.2.0     # 写入
-node scripts/bump-version.mjs --check   # 校验四处一致（可挂 CI）
+node scripts/bump-version.mjs 1.0.0     # 写入
+node scripts/bump-version.mjs --check   # 校验两份清单一致（可挂 CI）
 ```
 
 这只是版本维护，不生成安装包。目录职责见 [架构说明](docs/architecture.md)，验证范围与双端手工场景见 [验证说明](docs/verification.md)。

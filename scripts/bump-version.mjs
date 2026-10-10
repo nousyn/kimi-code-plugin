@@ -2,65 +2,21 @@
 // Sync the plugin version across both hosts:
 //   plugin.json                           -> version (canonical)
 //   .claude-plugin/plugin.json             -> version
-//   .claude-plugin/marketplace.json         -> metadata.version, plugins[kimi-code].version
 //
 // package.json deliberately has no version field (private, never published)
-// and there is no package-lock.json (zero dependencies), so these four
-// version fields are the whole truth. The Codex marketplace resolves plugin.json.
+// and there is no package-lock.json (zero dependencies). Both marketplaces
+// resolve versions from their plugin manifests instead of duplicating them.
 //
 // Usage:
-//   node scripts/bump-version.mjs <version>   set all four fields
-//   node scripts/bump-version.mjs --check     verify all four match plugin.json
+//   node scripts/bump-version.mjs <version>   set both manifest versions
+//   node scripts/bump-version.mjs --check     verify both match plugin.json
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 const SEMVER = /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$/;
 
-function pluginEntry(json) {
-  const entry = json.plugins?.find((p) => p?.name === 'kimi-code');
-  if (!entry) throw new Error('.claude-plugin/marketplace.json has no plugins entry named "kimi-code"');
-  return entry;
-}
-
-// One entry per version field. file paths are relative to the repo root.
-function fields(root) {
-  return [
-    {
-      file: 'plugin.json',
-      label: 'version',
-      get: (j) => j.version,
-      set: (j, v) => {
-        j.version = v;
-      },
-    },
-    {
-      file: '.claude-plugin/plugin.json',
-      label: 'version',
-      get: (j) => j.version,
-      set: (j, v) => {
-        j.version = v;
-      },
-    },
-    {
-      file: '.claude-plugin/marketplace.json',
-      label: 'metadata.version',
-      get: (j) => j.metadata?.version,
-      set: (j, v) => {
-        if (!j.metadata || typeof j.metadata !== 'object') throw new Error('marketplace.json has no metadata object');
-        j.metadata.version = v;
-      },
-    },
-    {
-      file: '.claude-plugin/marketplace.json',
-      label: 'plugins[kimi-code].version',
-      get: (j) => pluginEntry(j).version,
-      set: (j, v) => {
-        pluginEntry(j).version = v;
-      },
-    },
-  ].map((f) => ({ ...f, path: path.join(root, f.file) }));
-}
+const MANIFESTS = ['plugin.json', '.claude-plugin/plugin.json'];
 
 function readJson(file) {
   return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -72,10 +28,10 @@ function writeJson(file, json) {
 
 export function checkVersions(root, expected) {
   const mismatches = [];
-  for (const f of fields(root)) {
-    const actual = f.get(readJson(f.path));
+  for (const file of MANIFESTS) {
+    const actual = readJson(path.join(root, file)).version;
     if (actual !== expected) {
-      mismatches.push(`${f.file} ${f.label}: expected ${expected}, found ${actual ?? '(missing)'}`);
+      mismatches.push(`${file} version: expected ${expected}, found ${actual ?? '(missing)'}`);
     }
   }
   return mismatches;
@@ -86,13 +42,13 @@ export function bumpVersion(root, version) {
     throw new Error(`Expected a semver-like version such as 1.0.3, got: ${version}`);
   }
   const changed = [];
-  for (const file of [...new Set(fields(root).map((f) => f.path))]) {
-    const json = readJson(file);
-    const before = JSON.stringify(json);
-    for (const f of fields(root).filter((f) => f.path === file)) f.set(json, version);
-    if (JSON.stringify(json) !== before) {
-      writeJson(file, json);
-      changed.push(path.relative(root, file));
+  for (const file of MANIFESTS) {
+    const fullPath = path.join(root, file);
+    const json = readJson(fullPath);
+    if (json.version !== version) {
+      json.version = version;
+      writeJson(fullPath, json);
+      changed.push(file);
     }
   }
   return changed;
