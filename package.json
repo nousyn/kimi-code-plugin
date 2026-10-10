@@ -1,5 +1,5 @@
 {
-  "name": "kimi-plugin-cc",
+  "name": "kimi-code-plugin",
   "private": true,
   "type": "module",
   "engines": {

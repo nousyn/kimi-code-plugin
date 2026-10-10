@@ -36,7 +36,7 @@
 注册本地仓库或 Git 仓库对应的 marketplace：
 
 ```bash
-codex plugin marketplace add /absolute/path/to/kimi-plugin-cc
+codex plugin marketplace add /absolute/path/to/kimi-code-plugin
 ```
 
 在插件目录中选择 `Kimi Code` 安装，然后在新会话中选择该插件的 `setup` skill。支持 `codex plugin add` 的 CLI 也可以运行 `codex plugin add kimi-code@kimi-code`。

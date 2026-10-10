@@ -21,7 +21,7 @@ function makeRoot() {
     path.join(root, '.claude-plugin/marketplace.json'),
     JSON.stringify(
       {
-        name: 'kimi-plugin-cc',
+        name: 'kimi-code-plugin',
         metadata: { version: '0.1.0' },
         plugins: [{ name: 'kimi-code', version: '0.1.0', source: './' }],
       },

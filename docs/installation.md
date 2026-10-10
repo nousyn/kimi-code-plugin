@@ -23,7 +23,7 @@
 本地开发也可以直接加载仓库根目录：
 
 ```bash
-claude --plugin-dir /absolute/path/to/kimi-plugin-cc
+claude --plugin-dir /absolute/path/to/kimi-code-plugin
 ```
 
 `.claude-plugin/plugin.json` 登记插件，`skills/` 提供七个原名称的入口，`harnesses/claude/agents/kimi-rescue.md` 在清单中显式登记。不要再把 `plugins/kimi/` 作为插件目录。
@@ -35,7 +35,7 @@ claude --plugin-dir /absolute/path/to/kimi-plugin-cc
 通过 CLI 注册 marketplace（本地目录与 Git 来源均可）：
 
 ```bash
-codex plugin marketplace add /absolute/path/to/kimi-plugin-cc
+codex plugin marketplace add /absolute/path/to/kimi-code-plugin
 # 或：codex plugin marketplace add <Git 地址>
 ```
 

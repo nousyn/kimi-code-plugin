@@ -52,7 +52,7 @@ git diff --check
 
 ```bash
 codex plugin list --marketplace kimi-code --available --json \
-  -c 'marketplaces.kimi-code.source="/absolute/path/to/kimi-plugin-cc"' \
+  -c 'marketplaces.kimi-code.source="/absolute/path/to/kimi-code-plugin"' \
   -c 'marketplaces.kimi-code.source_type="local"'
 ```
 
