@@ -5,7 +5,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { spawnSync } from 'node:child_process';
 
-import { hasWorkingTreeChanges, isValidRef } from '../plugins/kimi/scripts/lib/git.mjs';
+import { hasWorkingTreeChanges, isValidRef } from '../runtime/lib/git.mjs';
 
 test('isValidRef accepts ordinary refs', () => {
   for (const ref of ['main', 'HEAD', 'v1.2.3', 'feature/foo-bar', 'user/name.branch']) {

@@ -4,5 +4,6 @@
   "description": "在 Claude Code 中调用本机 Kimi Code CLI 进行代码审查与任务委托",
   "author": {
     "name": "Nousyn"
-  }
+  },
+  "agents": ["./harnesses/claude/agents/kimi-rescue.md"]
 }

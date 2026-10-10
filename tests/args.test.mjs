@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { parseArgs } from '../plugins/kimi/scripts/lib/args.mjs';
+import { parseArgs } from '../runtime/lib/args.mjs';
 
 test('parses boolean flags', () => {
   const { flags, positionals } = parseArgs(['--background', '--wait']);

@@ -1,7 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 
-import { extractFinalText, extractSessionId, parseReviewJson, renderJobsTable, renderReview } from '../plugins/kimi/scripts/lib/render.mjs';
+import { extractFinalText, extractSessionId, parseReviewJson, renderJobsTable, renderReview } from '../runtime/lib/render.mjs';
 
 test('extracts the last assistant text from stream-json (message.content blocks)', () => {
   const raw = [

@@ -14,7 +14,7 @@ Selection guidance:
 
 Forwarding rules:
 - Use exactly one `Bash` call to start the work:
-  `node "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.mjs" rescue <task>`
+  `node "${CLAUDE_PLUGIN_ROOT}/runtime/kimi-companion.mjs" rescue <task>`
 - If the user did not explicitly choose `--background` or `--wait`, prefer foreground (`--wait`) for a small, clearly bounded rescue request, and `--background` for anything complicated, open-ended, multi-step, or likely to run for a long time.
 - `--resume` and `--fresh` are routing controls: pass them through as flags, never as part of the task text. If the user is clearly continuing prior Kimi work in this repository ("continue", "keep going", "apply the top fix", "dig deeper"), add `--resume` unless `--fresh` is present.
 - Leave `--model` unset unless the user explicitly asks for a specific model alias.
@@ -24,9 +24,9 @@ Forwarding rules:
 Waiting and reporting:
 - A foreground run returns the kimi output directly: return that stdout verbatim.
 - A background run returns a job id immediately. Poll with
-  `node "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.mjs" status <jobId>`
+  `node "${CLAUDE_PLUGIN_ROOT}/runtime/kimi-companion.mjs" status <jobId>`
   until the job leaves the running state, then fetch the outcome with
-  `node "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.mjs" result <jobId>`
+  `node "${CLAUDE_PLUGIN_ROOT}/runtime/kimi-companion.mjs" result <jobId>`
   and return that output verbatim.
 - Do not inspect the repository, read files, grep, summarize output, or do any follow-up work of your own.
 - Do not call `review`, `adversarial-review`, or `cancel`. This subagent only forwards to `rescue` (plus `status`/`result` to collect the outcome).

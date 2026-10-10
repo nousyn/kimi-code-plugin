@@ -1,16 +1,20 @@
-# kimi-plugin-cc
+# Kimi Code plugin
 
-一个 Claude Code 插件：让你在 Claude Code 会话里把代码审查和任务委托给本机的 [Kimi Code CLI](https://www.kimi.com/code)（`kimi`）。灵感来自 [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc)（它面向 Codex 做了同样的事）。
+一个同时支持 **Claude Code 和 Codex** 的插件：在会话里把代码审查和任务委托给本机的 [Kimi Code CLI](https://www.kimi.com/code)（`kimi`）。灵感来自 [openai/codex-plugin-cc](https://github.com/openai/codex-plugin-cc)。
 
-插件内置一个零依赖的伴随脚本（`kimi-companion.mjs`）：以非交互方式运行 `kimi`，把每次运行作为 job 落盘跟踪，事后提取最终答案。各个斜杠命令是对伴随脚本的封装，由 Claude 替你驱动。
+插件内置一个零依赖的伴随脚本（`runtime/kimi-companion.mjs`）：以非交互方式运行 `kimi`，把每次运行作为 job 落盘跟踪，事后提取最终答案。两个平台共用七个 skills 和同一份运行时，平台执行差异放在 `harnesses/`。**仓库根目录就是插件目录，直接安装，无需构建或打包。**
 
 ## 环境要求
 
 - **Kimi Code CLI** 已安装并登录（`kimi --version` 能正常运行；否则按官方文档安装后执行 `kimi login`）
 - **Node.js 18.18+**（伴随脚本是纯 ESM，无任何依赖）
-- Claude Code
+- Claude Code 或本地 Codex（安装并登录 Kimi 的同一执行环境）
 
 ## 安装
+
+完整步骤见 [安装与配置](docs/installation.md)。
+
+### Claude Code
 
 在 Claude Code 中执行：
 
@@ -25,7 +29,23 @@
 /kimi-code:setup
 ```
 
-## 命令一览
+原有 `/kimi-code:review` 等调用名称不变，入口已由 commands 迁移为 skills。
+
+### Codex
+
+注册本地仓库或 Git 仓库对应的 marketplace：
+
+```bash
+codex plugin marketplace add /absolute/path/to/kimi-plugin-cc
+```
+
+在插件目录中选择 `Kimi Code` 安装，然后在新会话中选择该插件的 `setup` skill。支持 `codex plugin add` 的 CLI 也可以运行 `codex plugin add kimi-code@kimi-code`。
+
+Codex 使用同名的 `setup`、`review`、`adversarial-review`、`rescue`、`status`、`result`、`cancel` skills。通过宿主提供的 skill 选择器选中 Kimi Code 的对应入口，再附上参数或任务；不要照抄 Claude 的 `/kimi-code:...` 调用形式。
+
+## 功能一览
+
+下表保留 Claude 调用形式；Codex 选择对应的同名 skill，参数含义相同。
 
 | 命令 | 作用 |
 | --- | --- |
@@ -89,7 +109,7 @@
 
 - 前台运行（`--wait`，脚本层默认）实时透传 kimi 的 stdout/stderr，同时分别写入该 job 的 `output.jsonl` 和 `stderr.log`（stderr 里带有会话续接提示，`--resume` 靠它工作）。
 - review / adversarial-review 命令在未显式给 `--wait`/`--background` 时，会先用 `git diff --shortstat` 估算审查规模并询问一次：仅 1–2 个文件的小审查推荐前台等待，其余推荐后台（前台会阻塞对话直到审查结束）。估算失败或无法询问时默认后台。
-- review、adversarial-review、cancel、result、status 标记了 `disable-model-invocation`：只能由你手动敲斜杠命令触发，Claude 不会自行发起审查消耗额度（rescue 除外——它保留给主会话主动委派）。
+- review、adversarial-review、cancel、result、status 保持手动触发：Claude 使用 `disable-model-invocation`，Codex 使用 `agents/openai.yaml` 中的 `allow_implicit_invocation: false`。rescue 保留给主会话主动委派，setup 也保留自动发现。
 - 后台运行（`--background`）以 `--output-format stream-json` 拉起一个 detached 的 kimi 进程（独立进程组，`cancel` 按组终止），登记 job 后立即返回 job id。
 - 状态存放在 `<你的仓库>/.kimi-plugin/`（`jobs.json` + `jobs/<id>/output.jsonl`）。不想提交的话把它加进你的 `.gitignore`。
 - `result` 对 stream-json 做防御式解析（逐行解析、跳过畸形行、取最后一条 assistant 文本），失败时回退为原始输出。
@@ -97,7 +117,9 @@
 - 审查目标由 kimi 自己在仓库里收集：它运行 `git status`（因此未跟踪的新文件也在审查范围内）和 `git diff`，并可继续阅读周边代码获取上下文。脚本只在完全无改动时提前退出，避免空审查白白消耗额度。
 - 由于 `kimi -p` 会自动批准普通工具调用，审查的只读约束是在 **prompt 层面**强制的——审查 prompt 明确禁止修改任何文件。
 
-另外还有一个 `kimi-rescue` 子代理供主会话委派：它把任务转发给伴随脚本的 `rescue` 命令，等待或轮询结果后汇报回来。
+Claude 还保留 `kimi-rescue` 子代理，由清单显式加载 `harnesses/claude/agents/kimi-rescue.md`。Codex 通过共享 rescue skill 和 `harnesses/codex/runtime.md` 执行等价的委派流程，不额外创建只负责转发命令的子代理。
+
+同一目标工作区中的两个宿主共用 `.kimi-plugin/`；不同 worktree 的任务记录各自独立。调用脚本时保持目标项目为工作目录，不要切换到插件安装目录。
 
 ## 与 codex-plugin-cc 的差异
 
@@ -113,11 +135,13 @@
 npm test
 ```
 
-运行参数解析、job 存储、stream-json 结果提取等的单元测试（node:test，零依赖）。
+运行参数解析、job 存储、stream-json 结果提取、双端插件布局和资源路径测试（node:test，零依赖）。布局测试使用临时目录和模拟 Kimi，不调用真实模型。
 
-发布新版本时同步所有 manifest 的版本号（`plugin.json`、`marketplace.json` 的 `metadata.version` 和 `plugins[kimi-code].version`）：
+发布新版本时同步四处版本号：根 `plugin.json`、`.claude-plugin/plugin.json`、Claude marketplace 的 `metadata.version` 和 `plugins[kimi-code].version`。根 `plugin.json` 是检查基准；Codex marketplace 从它读取版本，不重复声明：
 
 ```
 node scripts/bump-version.mjs 0.2.0     # 写入
-node scripts/bump-version.mjs --check   # 校验三处一致（可挂 CI）
+node scripts/bump-version.mjs --check   # 校验四处一致（可挂 CI）
 ```
+
+这只是版本维护，不生成安装包。目录职责见 [架构说明](docs/architecture.md)，验证范围与双端手工场景见 [验证说明](docs/verification.md)。

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// kimi-companion: bridge between Claude Code and the Kimi Code CLI.
+// kimi-companion: bridge between plugin hosts and the Kimi Code CLI.
 //
 // Usage: node kimi-companion.mjs <cmd> [args]
 //   setup                                     check the kimi installation
@@ -20,7 +20,7 @@ import * as kimi from './lib/kimi.mjs';
 import * as jobs from './lib/jobs.mjs';
 import { extractFinalText, extractSessionId, parseReviewJson, renderJobsTable, renderReview } from './lib/render.mjs';
 
-const PLUGIN_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
+const PLUGIN_ROOT = path.dirname(fileURLToPath(import.meta.url));
 
 function ensureKimi() {
   const res = spawnSync('kimi', ['--version'], { encoding: 'utf8' });

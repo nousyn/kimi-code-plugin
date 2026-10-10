@@ -8,10 +8,13 @@ import { bumpVersion, checkVersions } from '../scripts/bump-version.mjs';
 
 function makeRoot() {
   const root = fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-bump-test-'));
-  fs.mkdirSync(path.join(root, 'plugins/kimi/.claude-plugin'), { recursive: true });
   fs.mkdirSync(path.join(root, '.claude-plugin'), { recursive: true });
   fs.writeFileSync(
-    path.join(root, 'plugins/kimi/.claude-plugin/plugin.json'),
+    path.join(root, 'plugin.json'),
+    JSON.stringify({ name: 'kimi-code', version: '0.1.0', description: 'x' }, null, 2) + '\n',
+  );
+  fs.writeFileSync(
+    path.join(root, '.claude-plugin/plugin.json'),
     JSON.stringify({ name: 'kimi-code', version: '0.1.0', description: 'x' }, null, 2) + '\n',
   );
   fs.writeFileSync(
@@ -20,7 +23,7 @@ function makeRoot() {
       {
         name: 'kimi-plugin-cc',
         metadata: { version: '0.1.0' },
-        plugins: [{ name: 'kimi-code', version: '0.1.0', source: './plugins/kimi' }],
+        plugins: [{ name: 'kimi-code', version: '0.1.0', source: './' }],
       },
       null,
       2,
@@ -29,11 +32,13 @@ function makeRoot() {
   return root;
 }
 
-test('bumpVersion sets all three fields', () => {
+test('bumpVersion sets all four fields across both plugin manifests and the marketplace', () => {
   const root = makeRoot();
   try {
     const changed = bumpVersion(root, '1.2.3');
-    assert.equal(changed.length, 2);
+    assert.equal(changed.length, 3);
+    assert.equal(JSON.parse(fs.readFileSync(path.join(root, 'plugin.json'), 'utf8')).version, '1.2.3');
+    assert.equal(JSON.parse(fs.readFileSync(path.join(root, '.claude-plugin/plugin.json'), 'utf8')).version, '1.2.3');
     assert.deepEqual(checkVersions(root, '1.2.3'), []);
   } finally {
     fs.rmSync(root, { recursive: true, force: true });

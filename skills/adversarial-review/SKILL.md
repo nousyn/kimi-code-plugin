@@ -1,14 +1,18 @@
 ---
+name: adversarial-review
 description: Run a read-only adversarial Kimi review that challenges the design of local git changes
 argument-hint: "[--base <ref>] [--background|--wait] [--model <alias>] [what to focus the attack on]"
 disable-model-invocation: true
-allowed-tools: Bash(node:*), Bash(git:*), Bash(wc:*), AskUserQuestion
+allowed-tools: Read, Bash(node:*), Bash(git:*), Bash(wc:*), AskUserQuestion
 ---
 
-Run an adversarial Kimi review through the companion script. Unlike `/kimi-code:review`, this review challenges assumptions, tradeoffs, and failure modes instead of listing bugs.
+## Host execution
 
-Raw slash-command arguments:
-`$ARGUMENTS`
+Use the current host's execution instructions: [Claude Code](../../harnesses/claude/runtime.md) or [Codex](../../harnesses/codex/runtime.md). Read only the current host's file. Both manifests exist; their presence does not identify the host.
+
+Resolve `<plugin-root>` from this installed skill's location. Use the current invocation's arguments, as described by the host instructions. Keep the target project's working directory when running the companion. For CLI and output details, see the [runtime reference](../../runtime/README.md).
+
+Run an adversarial Kimi review through the companion script. Unlike the `review` skill, this review challenges assumptions, tradeoffs, and failure modes instead of listing bugs.
 
 Core constraint:
 - This command is review-only. The review runs against the Kimi Code CLI in `-p` mode, which auto-approves ordinary tool calls, so the read-only constraint is enforced at the prompt level.
@@ -16,7 +20,7 @@ Core constraint:
 
 Behavior:
 - Any free text after the flags is passed to Kimi as the focus of the adversarial pass. Preserve it exactly.
-- Diff scoping (`--base`) and `--model` work exactly like `/kimi-code:review`.
+- Diff scoping (`--base`) and `--model` work exactly like the `review` skill.
 
 Execution mode rules:
 - Treat `--wait`/`--background` as mode flags only when they appear before the first non-flag token — matching the companion's flags-first parsing. A literal flag word inside the focus text is part of the text, not a mode request.
@@ -26,8 +30,8 @@ Execution mode rules:
   - For a working-tree review, run `git status --short --untracked-files=all` and `git diff --shortstat HEAD`. Untracked files count as reviewable work — and their size is invisible to `--shortstat`, so `wc -l` any untracked files before judging the review tiny. Ignore anything under `.kimi-plugin/` — it is the plugin's own job state, excluded from review.
   - For a base-branch review, run `git diff --shortstat <base>...HEAD`.
   - Recommend waiting only when the review is clearly tiny — roughly 1-2 files and no sign of a broader directory-sized change. In every other case, including unclear size, recommend background: a foreground run blocks this conversation for the whole review (often minutes).
-  - If an estimate command fails (e.g. a repository with no commits yet) or the question cannot be asked, skip the estimate/question and use the background flow — it is non-blocking and recoverable via `/kimi-code:result`.
-- Then use `AskUserQuestion` exactly once with two options, putting the recommended option first and suffixing its label with `(Recommended)`:
+  - If an estimate command fails (e.g. a repository with no commits yet) or the question cannot be asked, skip the estimate/question and use the background flow — it is non-blocking and recoverable via the plugin’s `result` skill.
+- Then use the host question mechanism exactly once with two options, putting the recommended option first and suffixing its label with `(Recommended)`:
   - `Wait for results`
   - `Run in background`
 
@@ -39,7 +43,7 @@ Argument handling:
 Foreground flow:
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.mjs" adversarial-review $ARGUMENTS
+node "<plugin-root>/runtime/kimi-companion.mjs" adversarial-review <arguments>
 ```
 
 - Return the command stdout verbatim, exactly as-is. Do not paraphrase or add commentary.
@@ -49,8 +53,8 @@ Background flow:
 - Run the same command with `--background` prepended to the arguments (the companion detaches the kimi process and returns a job id immediately):
 
 ```bash
-node "${CLAUDE_PLUGIN_ROOT}/scripts/kimi-companion.mjs" adversarial-review --background $ARGUMENTS
+node "<plugin-root>/runtime/kimi-companion.mjs" adversarial-review --background <arguments>
 ```
 
-- Relay the job id, then tell the user: "Kimi adversarial review started in the background. Check `/kimi-code:status` for progress and `/kimi-code:result` for the findings."
+- Relay the job id, then tell the user: "Kimi adversarial review started in the background. Check the plugin’s `status` skill for progress and `result` for the findings."
 - Do not poll for completion in this turn.

@@ -1,15 +1,16 @@
 #!/usr/bin/env node
-// Sync the plugin version across the manifests Claude Code actually reads:
-//   plugins/kimi/.claude-plugin/plugin.json -> version
+// Sync the plugin version across both hosts:
+//   plugin.json                           -> version (canonical)
+//   .claude-plugin/plugin.json             -> version
 //   .claude-plugin/marketplace.json         -> metadata.version, plugins[kimi-code].version
 //
 // package.json deliberately has no version field (private, never published)
-// and there is no package-lock.json (zero dependencies), so these three
-// fields are the whole truth.
+// and there is no package-lock.json (zero dependencies), so these four
+// version fields are the whole truth. The Codex marketplace resolves plugin.json.
 //
 // Usage:
-//   node scripts/bump-version.mjs <version>   set all three fields
-//   node scripts/bump-version.mjs --check     verify all three match plugin.json
+//   node scripts/bump-version.mjs <version>   set all four fields
+//   node scripts/bump-version.mjs --check     verify all four match plugin.json
 import fs from 'node:fs';
 import path from 'node:path';
 import { pathToFileURL } from 'node:url';
@@ -26,7 +27,15 @@ function pluginEntry(json) {
 function fields(root) {
   return [
     {
-      file: 'plugins/kimi/.claude-plugin/plugin.json',
+      file: 'plugin.json',
+      label: 'version',
+      get: (j) => j.version,
+      set: (j, v) => {
+        j.version = v;
+      },
+    },
+    {
+      file: '.claude-plugin/plugin.json',
       label: 'version',
       get: (j) => j.version,
       set: (j, v) => {
@@ -94,7 +103,7 @@ function main(argv) {
   const version = argv.find((a) => !a.startsWith('-'));
 
   if (check) {
-    const expected = version ?? readJson(path.join(process.cwd(), 'plugins/kimi/.claude-plugin/plugin.json')).version;
+    const expected = version ?? readJson(path.join(process.cwd(), 'plugin.json')).version;
     const mismatches = checkVersions(process.cwd(), expected);
     if (mismatches.length) {
       console.error(`Version metadata is out of sync:\n${mismatches.join('\n')}`);

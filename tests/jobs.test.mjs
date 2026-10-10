@@ -12,7 +12,7 @@ import {
   pidAlive,
   jobsFile,
   stateDir,
-} from '../plugins/kimi/scripts/lib/jobs.mjs';
+} from '../runtime/lib/jobs.mjs';
 
 function tempRepo() {
   return fs.mkdtempSync(path.join(os.tmpdir(), 'kimi-plugin-test-'));
